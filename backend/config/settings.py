@@ -10,10 +10,28 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Secrets live in backend/.env (never in git, never in React). Lines look like  BREVO_API_KEY=xkeysib-...
+# Real environment variables win over the file.
+def _load_env_file():
+    f = BASE_DIR / '.env'
+    if not f.exists():
+        return
+    for line in f.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        k, v = line.split('=', 1)
+        os.environ.setdefault(k.strip(), v.strip().strip('"\''))
+
+
+_load_env_file()
 
 
 # Quick-start development settings - unsuitable for production
@@ -37,9 +55,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders',
+    'shop',
+    'accounts',
+    'shopping',
+    'support'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -48,6 +74,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
 
 ROOT_URLCONF = 'config.urls'
 
@@ -98,6 +126,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# A password-reset link stops working after this many seconds (and after one use, because it is tied to the old password)
+PASSWORD_RESET_TIMEOUT = 3600
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
@@ -116,8 +147,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Email
+
+# Email (reset password link terminal-e dekhabe)
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
 MAILERS = {
@@ -125,3 +159,39 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Brevo transactional email. Put these three in backend/.env
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '').strip()
+BREVO_SENDER_EMAIL = os.environ.get('BREVO_SENDER_EMAIL', '').strip()   # must be a sender you verified inside Brevo
+BREVO_SENDER_NAME = os.environ.get('BREVO_SENDER_NAME', 'HEEM').strip()
+# Developer-only: EMAIL_DEV_CONSOLE=1 prints emails in the terminal instead of sending when no Brevo key is set (needs DEBUG)
+EMAIL_DEV_CONSOLE = os.environ.get('EMAIL_DEV_CONSOLE', '').strip() == '1'
+
+
+# Social login. Public ids go to the browser; the Facebook secret stays here. Leave empty to show "not configured".
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
+FACEBOOK_APP_ID = os.environ.get('FACEBOOK_APP_ID', '').strip()
+FACEBOOK_APP_SECRET = os.environ.get('FACEBOOK_APP_SECRET', '').strip()
+
+
+# Django REST Framework
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.TokenAuthentication'],
+    'DEFAULT_THROTTLE_RATES': {'auth': '10/min','contact': '5/hour', 'returns': '10/day',
+                                'guest_checkout': '20/hour', 'track': '30/min'},
+}
+
+FRONTEND_URL = 'http://localhost:5173'
+
+
+# Store rules (taka)
+
+DELIVERY_CHARGE_DHAKA = 80
+DELIVERY_CHARGE_OUTSIDE = 130
+FREE_DELIVERY_OVER = 10000
+RETURN_WINDOW_DAYS = 7
+HEEM_BKASH_NUMBER = os.environ.get('HEEM_BKASH_NUMBER', '01830096509').strip()
+HEEM_NAGAD_NUMBER = os.environ.get('HEEM_NAGAD_NUMBER', '01830096509').strip()
+HEEM_ROCKET_NUMBER = os.environ.get('HEEM_ROCKET_NUMBER', '').strip()
+MAX_QTY_PER_ITEM = 10

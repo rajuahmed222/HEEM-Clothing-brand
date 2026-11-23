@@ -1,0 +1,19 @@
+﻿{% extends "admin/change_form.html" %}
+
+{% block submit_buttons_bottom %}
+{% if original %}
+<div class="submit-row" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+  <strong style="margin-right:auto;">Check your {{ original.get_provider_display }} account first, then decide:</strong>
+
+  <input type="submit" class="default" name="_save" value="Payment received: VERIFY"
+         onclick="document.getElementById('id_status').value='verified';">
+
+  <input type="submit" name="_save" value="Payment NOT received: REJECT"
+         style="background:#8a6d3b;color:#fff;"
+         onclick="var n=document.getElementById('id_review_note');
+                  if(!n.value.trim()){alert('Write the reason first (in the Review note box). The customer will see it, e.g. TrxID not found in our account.'); n.focus(); return false;}
+                  document.getElementById('id_status').value='rejected';">
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

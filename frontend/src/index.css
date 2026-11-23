@@ -1,1 +1,133 @@
 @import "tailwindcss";
+
+/* =============================================================================
+   HEEM global styles (Tailwind CSS v4)
+   1. Theme        breakpoint, fonts, colours, fluid type scale
+   2. Base         page defaults (inside @layer base, so any utility class can override)
+   3. Components   .reveal / .hero-in (names unchanged)
+   4. Overrides    the few rules that must beat utility classes on purpose
+   ========================================================================== */
+
+
+/* 1. THEME ------------------------------------------------------------------ */
+
+@theme {
+  --breakpoint-nav: 59.375rem; /* 950px */
+
+  /* Bodoni Moda / Jost load from Google Fonts in index.html (see notes). If they are
+     slow or blocked, the next fonts keep the same look: Didot / Georgia for display,
+     Helvetica Neue / Arial for body. */
+  --font-display: 'Bodoni Moda', 'Bodoni 72', Didot, Georgia, serif;
+  --font-body: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+
+  --color-ink: #1a1716;
+  --color-paper: #F7F4EF;
+
+  /* Fluid type scale. Every text-* class grows smoothly from its phone size at 360px
+     wide to its original desktop size at 1280px wide, and stays put outside that range.
+       size = min + (max - min) * (viewport - 22.5rem) / 57.5rem        (22.5rem = 360px, 57.5rem = 920px)
+     Written as  clamp(min, min + (max - min) * (100vw - 22.5rem) / 57.5, max)  with (max - min) in rem.
+     Line heights are Tailwind's own unitless ratios, so they follow these sizes automatically. */
+  --text-xs:   clamp(0.6875rem, calc(0.6875rem + 0.0625 * (100vw - 22.5rem) / 57.5), 0.75rem);
+  --text-sm:   clamp(0.8125rem, calc(0.8125rem + 0.0625 * (100vw - 22.5rem) / 57.5), 0.875rem);
+  --text-base: clamp(0.9375rem, calc(0.9375rem + 0.0625 * (100vw - 22.5rem) / 57.5), 1rem);
+  --text-lg:   clamp(1.0625rem, calc(1.0625rem + 0.0625 * (100vw - 22.5rem) / 57.5), 1.125rem);
+  --text-xl:   clamp(1.125rem,  calc(1.125rem  + 0.125  * (100vw - 22.5rem) / 57.5), 1.25rem);
+  --text-2xl:  clamp(1.25rem,   calc(1.25rem   + 0.25   * (100vw - 22.5rem) / 57.5), 1.5rem);
+  --text-3xl:  clamp(1.5rem,    calc(1.5rem    + 0.375  * (100vw - 22.5rem) / 57.5), 1.875rem);
+  --text-4xl:  clamp(1.75rem,   calc(1.75rem   + 0.5    * (100vw - 22.5rem) / 57.5), 2.25rem);
+  --text-5xl:  clamp(2.1rem,    calc(2.1rem    + 0.9    * (100vw - 22.5rem) / 57.5), 3rem);
+  --text-6xl:  clamp(2.4rem,    calc(2.4rem    + 1.35   * (100vw - 22.5rem) / 57.5), 3.75rem);
+  --text-7xl:  clamp(2.8rem,    calc(2.8rem    + 1.7    * (100vw - 22.5rem) / 57.5), 4.5rem);
+  --text-8xl:  clamp(3.2rem,    calc(3.2rem    + 2.8    * (100vw - 22.5rem) / 57.5), 6rem);
+  --text-9xl:  clamp(3.6rem,    calc(3.6rem    + 4.4    * (100vw - 22.5rem) / 57.5), 8rem);
+}
+
+
+/* 2. BASE ------------------------------------------------------------------- */
+/* Tailwind's preflight already gives images display:block, max-width:100% and
+   height:auto, and makes buttons / inputs / selects / textareas inherit font,
+   letter-spacing and colour, so none of that is repeated here. */
+
+@layer base {
+  :root {
+    color-scheme: light; /* the site is light only: keep native fields and scrollbars light too */
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-weight: 300;
+    color: var(--color-ink);
+    background: var(--color-paper);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Safety net: a stray wide element can never make the page scroll sideways.
+       "clip" (unlike "hidden") keeps position: sticky working. */
+    overflow-x: clip;
+  }
+
+  /* A photo forced into a fixed box is cropped, never stretched. */
+  img {
+    object-fit: cover;
+  }
+
+  /* Tailwind v4 no longer shows the hand cursor on buttons. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Smooth scrolling, only for people who have not asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+
+/* 3. COMPONENTS ------------------------------------------------------------- */
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+@layer components {
+  /* Scroll reveal. React adds .in when the element scrolls into view.
+     Content is hidden ONLY when scripting is on and motion is allowed, so with no
+     JavaScript, with reduced motion, or in a browser that does not know these
+     media queries, everything is simply visible. It can never stay invisible. */
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { transition: opacity .9s ease, transform .9s ease; }
+    .hero-in { animation: fadeIn 1.6s ease both; }
+  }
+
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    .reveal:not(.in) { opacity: 0; transform: translateY(28px); }
+  }
+}
+
+
+/* 4. OVERRIDES (intentionally outside any layer, so they beat utility classes) --- */
+
+/* iPhone Safari zooms the whole page when a field with text under 16px gets focus.
+   Our fluid scale makes text-sm / text-base smaller than 16px on phones, so keep every
+   form field at 16px on phones and on touch screens. Login, sign up and checkout never jump. */
+@media (max-width: 767px), (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+}
+
+/* Reduced motion: no animation or smooth scrolling anywhere (Tailwind's own
+   transition-* / animate-* classes included). */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}

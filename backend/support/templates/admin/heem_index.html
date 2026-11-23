@@ -1,0 +1,30 @@
+{% extends "admin/index.html" %}
+{% block content %}
+<style>
+  .heem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin:0 0 22px}
+  .heem-card{display:block;padding:14px 16px;border:1px solid var(--hairline-color,#ddd);border-radius:6px;background:var(--body-bg,#fff);color:var(--body-fg,#222);text-decoration:none}
+  .heem-card b{display:block;font-size:26px;line-height:1.1}
+  .heem-card span{font-size:12px;opacity:.75}
+  .heem-card.alert{border-left:4px solid #B08D57}
+  .heem-h{margin:6px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;opacity:.7}
+  .heem-status{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:24px;font-size:13px}
+</style>
+<h2 class="heem-h">Needs your attention</h2>
+<div class="heem-grid">
+  {% for label, n, url, alert in heem_cards %}
+    <a class="heem-card{% if alert and n %} alert{% endif %}" href="{{ url }}"><b>{{ n }}</b><span>{{ label }}</span></a>
+  {% endfor %}
+</div>
+<h2 class="heem-h">Sales (paid orders)</h2>
+<div class="heem-grid">
+  {% for label, amount, count in heem_money %}
+    <div class="heem-card"><b>৳{{ amount|floatformat:"0" }}</b><span>{{ label }} · {{ count }} order{{ count|pluralize }}</span></div>
+  {% endfor %}
+  <div class="heem-card"><b>{{ heem_products }}</b><span>Active products</span></div>
+</div>
+{% if heem_status_rows %}
+<h2 class="heem-h">All orders by status</h2>
+<div class="heem-status">{% for label, n in heem_status_rows %}<span>{{ label }}: <b>{{ n }}</b></span>{% endfor %}</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}
